@@ -16,16 +16,9 @@ import matplotlib.pyplot as plt
 from tqdm import trange
 
 # Load .txt file
+filename_input = input("File name (include .txt):")
 cols = [2, 3, 4, 5, 6, 7]  # 0-indexed for x,y,z,px,py,pz
-data_init = np.loadtxt("initPhase.txt", usecols=cols)
-data_final = np.loadtxt("finalPhase.txt", usecols=cols)
-
-x_init = data_init[:,0]
-y_init = data_init[:,1]
-z_init = data_init[:,2]
-px_init = data_init[:,3]
-py_init = data_init[:,4]
-pz_init = data_init[:,5]
+data_final = np.loadtxt(filename_input, usecols=cols)
 
 x_fin = data_final[:,0]
 y_fin = data_final[:,1]
@@ -35,62 +28,32 @@ py_fin = data_final[:,4]
 pz_fin = data_final[:,5]
 
 fig, ax = plt.subplots(3,2, figsize=(13.0, 16.0))
-ax[0,0].scatter(x_init,px_init, s=2, alpha=0.5)
-ax[0,0].set_xlabel("x [mm]")
-ax[0,0].set_ylabel(r"$p_x$ [MeV/c]")
-ax[0,0].set_title("Initial Phase Space Distribution in x")
-ax[1,0].hist(px_init, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[1,0].set_xlabel(r"$p_x$ [MeV/c]")
-ax[1,0].set_ylabel("Count")
-ax[1,0].set_title(r"Histogram for Initial Phase Space Distribution in $p_x$")
-ax[2,0].hist(x_init, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[2,0].set_xlabel("x [mm]")
-ax[2,0].set_ylabel("Count")
-ax[2,0].set_title("Histogram for Initial Phase Space Distribution in x")
-
-ax[0,1].scatter(y_init,py_init, s=2, alpha=0.5)
-ax[0,1].set_xlabel("y [mm]")
-ax[0,1].set_ylabel(r"$p_y$ [MeV/c]")
-ax[0,1].set_title("Initial Phase Space Distribution in y")
-ax[1,1].hist(py_init, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[1,1].set_xlabel(r"$p_y$ [MeV/c]")
-ax[1,1].set_ylabel("Count")
-ax[1,1].set_title(r"Histogram for Initial Phase Space Distribution in $p_y$")
-ax[2,1].hist(y_init, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[2,1].set_xlabel("y [mm]")
-ax[2,1].set_ylabel("Count")
-ax[2,1].set_title("Histogram for Initial Phase Space Distribution in y")
-plt.savefig("initialPhaseSpace.png")
-plt.close()
-
-fig, ax = plt.subplots(3,2, figsize=(13.0, 16.0))
 ax[0,0].scatter(x_fin,px_fin, s=2, alpha=0.5)
 ax[0,0].set_xlabel("x [mm]")
 ax[0,0].set_ylabel(r"$p_x$ [MeV/c]")
-ax[0,0].set_title("Final Phase Space Distribution in x")
+ax[0,0].set_title("Phase Space Distribution in x")
 ax[1,0].hist(px_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
 ax[1,0].set_xlabel(r"$p_x$ [MeV/c]")
 ax[1,0].set_ylabel("Count")
-ax[1,0].set_title(r"Histogram for Final Phase Space Distribution in $p_x$")
+ax[1,0].set_title(r"Histogram for Phase Space Distribution in $p_x$")
 ax[2,0].hist(x_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
 ax[2,0].set_xlabel("x [mm]")
 ax[2,0].set_ylabel("Count")
-ax[2,0].set_title("Histogram for Initial Phase Space Distribution in x")
+ax[2,0].set_title("Histogram for Phase Space Distribution in x")
 
 ax[0,1].scatter(y_fin,py_fin, s=2, alpha=0.5)
 ax[0,1].set_xlabel("y [mm]")
 ax[0,1].set_ylabel(r"$p_y$ [MeV/c]")
-ax[0,1].set_title("Final Phase Space Distribution in y")
+ax[0,1].set_title("Phase Space Distribution in y")
 ax[1,1].hist(py_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
 ax[1,1].set_xlabel(r"$p_y$ [MeV/c]")
 ax[1,1].set_ylabel("Count")
-ax[1,1].set_title(r"Histogram for Final Phase Space Distribution in $p_y$")
+ax[1,1].set_title(r"Histogram for Phase Space Distribution in $p_y$")
 ax[2,1].hist(y_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
 ax[2,1].set_xlabel("y [mm]")
 ax[2,1].set_ylabel("Count")
-ax[2,1].set_title("Histogram for Initial Phase Space Distribution in y")
-plt.savefig("finalPhaseSpace.png")
-plt.close()
+ax[2,1].set_title("Histogram for Phase Space Distribution in y")
+
 
 # TRANSVERSE X
 # Load x, xprime, p data from G4BL
@@ -167,4 +130,8 @@ cov_y_yprime_beta = cov_y_yprime- Dy * Dyprime* var_δy
 αy = -cov_y_yprime_beta / εy
 
 print("Emittance x: "+ str(ε) + " Emittance y: " + str(εy))
-# print(tabulate([['Alice', 24], ['Bob', 19]], headers=['Name', 'Age']))
+plt.figtext(
+    0.5, 0.91, r"$\epsilon_x$: "+ str(ε) + r" $\epsilon_y$: " + str(εy), horizontalalignment='center', fontsize=20
+)
+plt.savefig(filename_input + "_PhaseSpace.png")
+plt.close()
