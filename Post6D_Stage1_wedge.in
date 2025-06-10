@@ -1,0 +1,186 @@
+# POST 6D - RECTILINEAR LATTICE - STAGE 01
+
+# trace format=ascii
+  trace format=ascii nTrace=1
+
+  g4ui when=4 "/vis/viewer/set/background 1 1 1"
+
+# param maxStep=1
+
+# QGSP is the "default" physics use-case for HEP
+  
+  physics QGSP_BIC doStochastics=1 
+# disable=Decay
+
+# QGSP is the "default" physics use-case for High Energy Physics
+# but LHEP_BIC is better for low-energy simulations
+# physics LHEP_BIC
+
+# positives only
+  trackcuts keep=pi+,mu+,kaon+ kineticEnergyCut=1 killSecondaries=0
+# negatives only
+# trackcuts keep=pi-,mu-,kaon- kineticEnergyCut=1 killSecondaries=0
+
+# red
+  particlecolor mu+=1,0,0
+# white  
+  particlecolor reference=1,1,1
+
+  param pi=3.141592654
+  param degrad=$pi/180
+  
+# Distribution displacement
+
+param -unset refX=-7.00
+
+param -unset refY=-23.75 
+
+
+# CAVITY
+
+  param frfcool=0.325
+  param -unset Vrfcool=19.0
+  param ficool=41
+  param cavLEN=248
+   
+# ABSORBER
+
+  param abshalfangle=60
+  param absoffset=86.0
+  param absLEN=960
+  param absRAD=280 
+  param abshgt=280
+  param abswidth=280
+
+# COILS
+ 
+  param coiltilt=0.9 
+   
+  param J1=69.80
+  param J2=-69.80
+
+# LATTICE PARAMETERS
+  
+  #param cellNUMBER=20
+  param cellNUMBER=10
+  param ci=1-$cellNUMBER
+  
+  param apertr=280
+  param cellLEN=2750
+  param channelLEN=$cellNUMBER*$cellLEN
+
+# closed orbit displacement
+  param -unset refX=0
+  param -unset refY=0 
+
+######################## PARTICLES AND DISTRIBUTION #######################
+
+ param -unset nEvents=500 
+ param -unset beamin=for003Stg01G4BL.txt
+
+ param refP=203.0
+
+# reference particle=mu+ referenceMomentum=$refP beamZ=0 noEfield=1 noEloss=1 noBfield=1
+ reference particle=mu+ referenceMomentum=$refP beamZ=0 noEfield=1 noEloss=1
+  
+ beam ascii filename=$beamin nEvents=$nEvents \
+	beamX=$refX \
+	beamY=$refY \
+	beamZ=0
+
+
+# kill secondaries
+trackcuts killSecondaries=1
+
+
+param i=1
+
+
+coil CoolCoil1 material=Cu innerRadius=770.0 outerRadius=920.0 length=500.00 
+solenoid CoolSol1 coilName=CoolCoil1 current=$J1 color=1,1,0 kill=1
+
+coil CoolCoil2 material=Cu innerRadius=770.0 outerRadius=920.0 length=500.00 
+solenoid CoolSol2 coilName=CoolCoil2 current=$J2 color=1,1,0 kill=1
+
+
+pillbox cavity innerLength=$cavLEN frequency=$frfcool maxGradient=$Vrfcool irisRadius=$apertr win1Thick=0.0 win2Thick=0.0 wallThick=1.0 collarThick=0.0 phaseAcc=$ficool kill=1 maxStep=2
+
+
+extrusion LHextrDS color=1,0,1 material=LH2 length=$abswidth \
+vertices='0,0; \
+                 -$absLEN/2,$absLEN/2/tan($abshalfangle*$degrad); \
+                 -$absLEN/2,$abshgt; \
+                  0,$abshgt'
+
+extrusion LHextrUS color=1,0,1 material=LH2 length=$abswidth \
+vertices='0,0; \
+                  0,$abshgt; \
+                  $absLEN/2,$abshgt; \
+                  $absLEN/2,$absLEN/2/tan($abshalfangle*$degrad)'
+
+#tubs LH2a length=$absLEN outerRadius=$absRAD \
+	initialPhi=0 finalPhi=$abshalfangle \
+	color=1.0,0.0,1.0 material=LH2 
+#tubs LH2b length=$absLEN outerRadius=$absRAD \
+	initialPhi=-$abshalfangle finalPhi=0 \
+	color=1.0,0.0,1.0 material=LH2 
+
+
+do i $ci $cellNUMBER 
+
+
+place CoolSol1 x=0 z=555+$cellLEN*($i-1) \ 
+      y=0 rotation=X-$coiltilt    
+
+place CoolSol2 x=0 z=$cellLEN*($i)-555 \
+      y=0 rotation=X$coiltilt     
+
+ 
+place cavity z=749.5+$cellLEN*($i-1)  color=1,0,0    
+place cavity z=999.5+$cellLEN*($i-1)  color=1,0,0    
+place cavity z=1249.5+$cellLEN*($i-1) color=1,0,0      
+place cavity z=1499.5+$cellLEN*($i-1) color=1,0,0  
+place cavity z=1749.5+$cellLEN*($i-1) color=1,0,0 
+place cavity z=1999.5+$cellLEN*($i-1) color=1,0,0
+
+place LHextrDS x=$absoffset \
+             y=0 \
+             z=$cellLEN*($i-1) \
+             rotation=Z90,Y00,X90
+place LHextrUS x=$absoffset  \
+             y=0 \
+             z=$cellLEN*($i-1)+0 \
+             rotation=Z90,Y00,X90
+
+#place LH2a x=($radius-$absoffset*sin($abstilt*$degrad))*cos($ABSangle*$degrad+0.00005) \
+             y=$absoffset*cos($abstilt*$degrad) \
+             z=($radius-$absoffset*sin($abstilt*$degrad))*sin($ABSangle*$degrad+0.00005) \
+             rotation=Z90,Y90,Z$abstilt,Y-$ABSangle 
+#place LH2b x=($radius-$absoffset*sin($abstilt*$degrad))*cos($ABSangle*$degrad-0.00005) \
+             y=$absoffset*cos($abstilt*$degrad) \
+             z=($radius-$absoffset*sin($abstilt*$degrad))*sin($ABSangle*$degrad-0.00005) \
+             rotation=Z90,Y90,Z$abstilt,Y-$ABSangle
+
+enddo 
+
+# B-map in the lattice
+  
+#  fieldmap coolerSol  filename=for028.dat
+  
+#  do j 1 $cellNUMBER 
+ 
+#  place coolerSol  z=$cellLEN*($j-1) 
+   
+#  enddo
+
+
+zntuple cooling_monitor  zloop=0:$channelLEN:$cellLEN format=for009  file=for009.dat  referenceParticle=0 coordinates=c require=PDGid==-13||PDGid==13 
+
+particlefilter Filter radius=1000 length=0.001 kill=mu+ referenceWait=1
+place Filter z=$channelLEN+1
+
+
+#printfield type=grid file="for028G4BL.dat" \
+X0=-350 dX=10 nX=71 \
+Z0=0 dZ=10 nZ=276 \
+Y0=-350 dY=10 nY=71
