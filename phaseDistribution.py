@@ -17,44 +17,74 @@ from tqdm import trange
 
 # Load .txt file
 filename_input = input("File name (include .txt):")
-cols = [2, 3, 4, 5, 6, 7]  # 0-indexed for x,y,z,px,py,pz
+cols = [0, 6, 7, 8, 9, 10, 11]  # 0-indexed for ievt, x,y,z,px,py,pz
 data_final = np.loadtxt(filename_input, usecols=cols)
 
-x_fin = data_final[:,0]
-y_fin = data_final[:,1]
-z_fin = data_final[:,2]
-px_fin = data_final[:,3]
-py_fin = data_final[:,4]
-pz_fin = data_final[:,5]
+x_fin = []
+y_fin = []
+px_fin = []
+py_fin = []
+count = 0
 
-fig, ax = plt.subplots(3,2, figsize=(13.0, 16.0))
-ax[0,0].scatter(x_fin,px_fin, s=2, alpha=0.5)
-ax[0,0].set_xlabel("x [mm]")
-ax[0,0].set_ylabel(r"$p_x$ [MeV/c]")
-ax[0,0].set_title("Phase Space Distribution in x")
-ax[1,0].hist(px_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[1,0].set_xlabel(r"$p_x$ [MeV/c]")
-ax[1,0].set_ylabel("Count")
-ax[1,0].set_title(r"Histogram for Phase Space Distribution in $p_x$")
-ax[2,0].hist(x_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[2,0].set_xlabel("x [mm]")
-ax[2,0].set_ylabel("Count")
-ax[2,0].set_title("Histogram for Phase Space Distribution in x")
+for i in data_final:
+    if i[0] == 0.0:
+        if count == 0:
+            x_fin.append(i[1])
+            y_fin.append(i[2])
+            px_fin.append(i[4])
+            py_fin.append(i[5])
+            count += 1
+        
+        else:
+            fig, ax = plt.subplots(3,2, figsize=(13.0, 16.0))
+            ax[0,0].scatter(x_fin,px_fin, s=2, alpha=0.5)
+            ax[0,0].set_xlabel("x [mm]")
+            ax[0,0].set_ylabel(r"$p_x$ [MeV/c]")
+            ax[0,0].set_title("Phase Space Distribution in x")
+            ax[1,0].hist(px_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
+            ax[1,0].set_xlabel(r"$p_x$ [MeV/c]")
+            ax[1,0].set_ylabel("Count")
+            ax[1,0].set_title(r"Histogram for Phase Space Distribution in $p_x$")
+            ax[2,0].hist(x_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
+            ax[2,0].set_xlabel("x [mm]")
+            ax[2,0].set_ylabel("Count")
+            ax[2,0].set_title("Histogram for Phase Space Distribution in x")
 
-ax[0,1].scatter(y_fin,py_fin, s=2, alpha=0.5)
-ax[0,1].set_xlabel("y [mm]")
-ax[0,1].set_ylabel(r"$p_y$ [MeV/c]")
-ax[0,1].set_title("Phase Space Distribution in y")
-ax[1,1].hist(py_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[1,1].set_xlabel(r"$p_y$ [MeV/c]")
-ax[1,1].set_ylabel("Count")
-ax[1,1].set_title(r"Histogram for Phase Space Distribution in $p_y$")
-ax[2,1].hist(y_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
-ax[2,1].set_xlabel("y [mm]")
-ax[2,1].set_ylabel("Count")
-ax[2,1].set_title("Histogram for Phase Space Distribution in y")
+            ax[0,1].scatter(y_fin,py_fin, s=2, alpha=0.5)
+            ax[0,1].set_xlabel("y [mm]")
+            ax[0,1].set_ylabel(r"$p_y$ [MeV/c]")
+            ax[0,1].set_title("Phase Space Distribution in y")
+            ax[1,1].hist(py_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
+            ax[1,1].set_xlabel(r"$p_y$ [MeV/c]")
+            ax[1,1].set_ylabel("Count")
+            ax[1,1].set_title(r"Histogram for Phase Space Distribution in $p_y$")
+            ax[2,1].hist(y_fin, bins=64, alpha=0.7, color='b', edgecolor='black')
+            ax[2,1].set_xlabel("y [mm]")
+            ax[2,1].set_ylabel("Count")
+            ax[2,1].set_title("Histogram for Phase Space Distribution in y")
+            
+            plt.savefig(filename_input + "_cell_" +str(count) + "_PhaseSpace.png")
+            plt.close()
+            
+            count +=1
+            
+            x_fin.clear()
+            y_fin.clear()
+            px_fin.clear()
+            py_fin.clear()
+            
+            x_fin.append(i[1])
+            y_fin.append(i[2])
+            px_fin.append(i[4])
+            py_fin.append(i[5])
+    
+    elif i[0] != 0.0:
+        x_fin.append(i[1])
+        y_fin.append(i[2])
+        px_fin.append(i[4])
+        py_fin.append(i[5])
 
-
+""" 
 # TRANSVERSE X
 # Load x, xprime, p data from G4BL
 x = px_fin       # mm
@@ -135,3 +165,4 @@ plt.figtext(
 )
 plt.savefig(filename_input + "_PhaseSpace.png")
 plt.close()
+"""
