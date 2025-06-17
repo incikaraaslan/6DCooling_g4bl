@@ -68,7 +68,6 @@ for i in data_final:
             ax[2,1].set_title("Histogram for Phase Space Distribution in y")
             ax[2,1].set_xlim(-20,20)
             ax[2,1].set_ylim(0,700)
-            
             plt.savefig(filename_input + "_cell_" +str(count) + "_PhaseSpace.png")
             plt.close()
             
