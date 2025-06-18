@@ -44,8 +44,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mean", type=float, default=0.0, help="Offset Mean [MV/m]")
     parser.add_argument("--stdev", type=float, default=1.0,  help="Offset Mean [MV/m]" )
-    parser.add_argument("--sample-size", type=int, default=3,  help="# Trials")
-    parser.add_argument("--number-of-particles", type=int, default=50,  help="# particles in beam")
+    parser.add_argument("--sample-size", type=int, default=10,  help="# Trials")
+    parser.add_argument("--number-of-particles", type=int, default=2000,  help="# particles in beam")
     args = parser.parse_args()
     
     rfgrad_actual = 22.508192486472524
@@ -129,25 +129,31 @@ if __name__ == "__main__":
             transs_sem.append(np.std(t)/np.sqrt(t.shape[0]))
         
         break
-    
+    vals_formatted = [f'{x:.3f}' for x in values]
     plt.errorbar(zvals[0], eperps_avg, xerr = None, yerr = eperps_sem, color='black')
     plt.xlabel("z [m]")
     plt.ylabel(r"$\epsilon_T$ [mm]")
     plt.title("Transverse Emittance v. Beam Axis (z)")
+    plt.figtext(0.5, 0.95, "RF Gradient Values [MW/m]: " + str(vals_formatted), horizontalalignment='center', fontsize=10)
+    plt.savefig("./rfgradtol_eperp"+"_sample-size: " + str(sample_size)+".png")
     plt.show()
-    plt.savefig("./rfgradtol_eperp.png")
+    
     plt.errorbar(zvals[0], elongs_avg, xerr = None, yerr = elongs_sem, color='black')
     plt.xlabel("z [m]")
     plt.ylabel(r"$\epsilon_L$ [mm]")
     plt.title("Longitudinal Emittance v. Beam Axis (z)")
+    plt.figtext(0.5, 0.95, "RF Gradient Values [MW/m]: " + str(vals_formatted), horizontalalignment='center', fontsize=10)
+    plt.savefig("./rfgradtol_elong"+"_sample-size: " + str(sample_size)+".png")
     plt.show()
-    plt.savefig("./rfgradtol_elong.png")
+    
     plt.errorbar(zvals[0], transs_avg, xerr = None, yerr = transs_sem, color='black')
     plt.xlabel("z [m]")
     plt.ylabel("Transmission [%]")
     plt.title("Transmission v. Beam Axis (z)")
+    plt.figtext(0.5, 0.95, "RF Gradient Values [MW/m]: " + str(vals_formatted), horizontalalignment='center', fontsize=10)
+    plt.savefig("./rfgradtol_trans"+"_sample-size: " + str(sample_size)+".png")
     plt.show()
-    plt.savefig("./rfgradtol_trans.png")
+    
     
             
     
