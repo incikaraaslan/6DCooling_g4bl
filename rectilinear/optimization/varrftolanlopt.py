@@ -11,6 +11,8 @@ from scipy.optimize import differential_evolution
 from multiprocessing import Pool, cpu_count
 import hashlib
 import tempfile
+from itertools import count
+tag_counter = count()
 
 def pack_inputs(gradients, phases):
     return np.concatenate([gradients.flatten(), phases.flatten()])
@@ -42,32 +44,40 @@ def run_g4beamline(input_file, gradients, phases, tag):
             f"last={args.number_of_particles}"
         ], capture_output=True, text=True, check=True)
         
-        # Rename for ECALC9f use
-        os.rename(f"./for009_{tag}.txt", f"./for009.dat")
-
+        if result.returncode != 0:
+                print(f"[{tag}] G4beamline exited with code {result.returncode}")
+                print(f"[{tag}] stdout:\n{result.stdout}")
+                print(f"[{tag}] stderr:\n{result.stderr}")
+                return None
+        
         return result
-    except subprocess.CalledProcessError as e:
-        print(f"[{tag}] G4beamline error: {e.stderr}")
+
+    except Exception as e:
+        print(f"[{tag}] G4beamline exception: {e}")
         return None
 
 def objective(x):
-    gradients, phases = unpack_inputs(x)
     
     # Unique tag for temp files to avoid collisions
-    tag = hashlib.md5(x.tobytes()).hexdigest()[:8]
-    temp_input = f"{input_file}_{tag}"
-    out_file = f"for009_{tag}.txt"
+    tag = next(tag_counter)
+    
+    gradients, phases = unpack_inputs(x)
+    ecalc9f_file = "ecalc9f.inp"
+    ecalcfinal_file = "./ecalc9f.dat"
     
     # Run G4BL
     result = run_g4beamline(input_file, gradients, phases, tag)
     
     # Rename output for ECALC
-    if os.path.exists("./for009.dat"):
+    if os.path.exists("./for009.dat") and tag == 0:
             os.rename("./for009.dat", "./for009"+ f"prev"+".txt")
             os.rename("./for009"+ f"_{tag}"+".txt", "./for009.dat")
+    elif os.path.exists("./for009.dat") and tag != 0:
+            os.rename("./for009.dat", "./for009"+ f"_{tag-1}"+".txt")
+            os.rename("./for009"+ f"_{tag}"+".txt", "./for009.dat") 
     else:
         os.rename("./for009"+ f"_{tag}"+".txt", "./for009.dat")
-
+    
     # Run ECALC9f
     run_ecalc9f(ecalc9f_file)
 
@@ -104,8 +114,6 @@ if __name__ == "__main__":
     rfwindowlength_actual = 0.1
     
     input_file = "./" + input("please write the name of the g4bl input file: ")
-    ecalc9f_file = "ecalc9f.inp"
-    ecalcfinal_file = "./ecalc9f.dat"
     
     bounds = [(20.0, 25.0)] * 186 + [(0, 360)] * 186  # Adjust bounds to physical limits
 
