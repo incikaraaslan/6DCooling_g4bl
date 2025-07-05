@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from tqdm import trange
-from varrftol import insert_generated_blocks
+from varrftolnew import insert_generated_blocks
 
 def run_g4beamline(input_file, gradients, phases, i):
     try:
@@ -40,11 +40,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # ACTUAL VALUES
-    rfgrad_actual = 22.508192486472524
-    rfphase_actual = 32.84244060974717
+    rfgrad_actual = 23.635989510791358
+    rfphase_actual = 27.13412117208823
     rffreq_actual=0.352
     rfwindowlength_actual = 0.1
     
+    """rfgrad_actual = 22.508192486472524
+    rfphase_actual = 32.84244060974717
+    rffreq_actual=0.352
+    rfwindowlength_actual = 0.1"""
+    
+    """param rf_grad=
+    param rf_length=220
+    param rf_fre=0.352 #mHz
+    param rf_ph=27.13412117208823"""
     
     mean = rfgrad_actual + args.mean
     stdev = args.stdev
@@ -57,15 +66,15 @@ if __name__ == "__main__":
     
     # G4BL RUN for each sample file (1σ)
     for i in trange(args.sample_size): # THIS IS SUPPOSED TO RUN IT FOR ALL SAMPLE SIZES SO SAMPLE_SIZE, NOT len(values) = 30, values.size = 180 
-        values = np.random.normal(mean, stdev, size=(31, 6)) # 30 + 1 due to g4bl shenanigans
-        valuesp = np.random.normal(meanp, stdevp, size=(31, 6))
+        values = np.random.normal(mean, stdev, size=(41, 5)) # (31,6) 30 + 1 due to g4bl shenanigans
+        valuesp = np.random.normal(meanp, stdevp, size=(41, 5))
         g4blresult = run_g4beamline(input_file, values, valuesp, i) # (name, 180 values in (30,6), sample #)
         
         if g4blresult:
             print("G4beamline simulation completed successfully.")
     
     # Run No Error Case
-    result_noerr = subprocess.run(['g4bl', "incis_cleaned_cooling_stage1.g4bl", f'filename=for009_noerr', f"last={args.number_of_particles}"], capture_output=True, text=True, check=True)
+    result_noerr = subprocess.run(['g4bl', "incis_cleaned_cooling_stage2.g4bl", f'filename=for009_noerr', f"last={args.number_of_particles}"], capture_output=True, text=True, check=True)
     
     # ECALC6F RUN for each sample file
     eperps = []
