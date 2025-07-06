@@ -40,15 +40,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # ACTUAL VALUES
-    rfgrad_actual = 23.635989510791358
+    """rfgrad_actual = 23.635989510791358
     rfphase_actual = 27.13412117208823
     rffreq_actual=0.352
-    rfwindowlength_actual = 0.1
+    rfwindowlength_actual = 0.1"""
     
-    """rfgrad_actual = 22.508192486472524
+    rfgrad_actual = 22.508192486472524
     rfphase_actual = 32.84244060974717
     rffreq_actual=0.352
-    rfwindowlength_actual = 0.1"""
+    rfwindowlength_actual = 0.1
     
     """param rf_grad=
     param rf_length=220
@@ -66,15 +66,15 @@ if __name__ == "__main__":
     
     # G4BL RUN for each sample file (1σ)
     for i in trange(args.sample_size): # THIS IS SUPPOSED TO RUN IT FOR ALL SAMPLE SIZES SO SAMPLE_SIZE, NOT len(values) = 30, values.size = 180 
-        values = np.random.normal(mean, stdev, size=(41, 5)) # (31,6) 30 + 1 due to g4bl shenanigans
-        valuesp = np.random.normal(meanp, stdevp, size=(41, 5))
+        values = np.random.normal(mean, stdev, size=(31, 6)) # (31,6) 30 + 1 due to g4bl shenanigans
+        valuesp = np.random.normal(meanp, stdevp, size=(31, 6))
         g4blresult = run_g4beamline(input_file, values, valuesp, i) # (name, 180 values in (30,6), sample #)
         
         if g4blresult:
             print("G4beamline simulation completed successfully.")
     
     # Run No Error Case
-    result_noerr = subprocess.run(['g4bl', "incis_cleaned_cooling_stage2.g4bl", f'filename=for009_noerr', f"last={args.number_of_particles}"], capture_output=True, text=True, check=True)
+    result_noerr = subprocess.run(['g4bl', "incis_cleaned_cooling_stage1_OLD.g4bl", f'filename=for009_noerr', f"last={args.number_of_particles}"], capture_output=True, text=True, check=True)
     
     # ECALC6F RUN for each sample file
     eperps = []
@@ -171,7 +171,7 @@ if __name__ == "__main__":
     plt.title("Transverse Emittance v. Beam Axis (z)")
     plt.grid(True)
     plt.legend()
-    plt.savefig("./varrfgradphtol_eperp"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles) + "_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
+    plt.savefig("./stage1_varrfgradphtol_eperp"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles) + "_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
     plt.close()
     
     plt.errorbar(zvals[0], elongs_avg, xerr = None, yerr = elongs_sem, color='black', ecolor='blue', capsize=2.5, capthick=1.5, elinewidth=0.7, linestyle="dashed")
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     plt.title("Longitudinal Emittance v. Beam Axis (z)")
     plt.grid(True)
     plt.legend()
-    plt.savefig("./varrfgradphtol_elong"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles)+"_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
+    plt.savefig("./stage1_varrfgradphtol_elong"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles)+"_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
     plt.close()
     
     plt.errorbar(zvals[0], transs_avg, xerr = None, yerr = transs_sem, color='black', ecolor='blue', capsize=2.5, capthick=1.5, elinewidth=0.7, linestyle="dashed")
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     plt.title("Transmission v. Beam Axis (z)")
     plt.grid(True)
     plt.legend()
-    plt.savefig("./varrfgradphtol_trans"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles) +"_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
+    plt.savefig("./stage1_varrfgradphtol_trans"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles) +"_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
     plt.close()
     
             

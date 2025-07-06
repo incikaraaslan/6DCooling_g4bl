@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import random
 from tqdm import trange
 from varrftol import insert_generated_blocks
+import time
 
 def run_g4beamline(input_file, gradients, phases, which_stage, which_file, number_of_particles):
     try:
@@ -19,6 +20,11 @@ def run_g4beamline(input_file, gradients, phases, which_stage, which_file, numbe
         return None
 
 def run_ecalc9f(input_file):
+    if os.path.exists("ecalc9f.dat"):
+        try:
+            os.remove("ecalc9f.dat")
+        except Exception as e:
+            print(f"WARNING: Could not delete ecalc9f.dat before ECALC9F run: {e}")
     try:
         result = subprocess.run(['./ecalc9f.exe', input_file], capture_output=True, text=True, check=True)
         return result
@@ -63,9 +69,37 @@ def singleCell(input_file, mean, stdev, meanp, stdevp, sample_size, no_cavities,
         else:
             os.rename("./for009"+ f"_{j}"+".txt", "./for009.dat")
 
-        ecalcresult = run_ecalc9f(ecalc9f_file)
-        data_final = np.loadtxt(ecalcfinal_file,skiprows=13, usecols=cols)
-        print(data_final)
+        try: 
+            ecalcresult = run_ecalc9f(ecalc9f_file)
+            print("ECALC9F stdout:\n", ecalcresult.stdout)
+            print("ECALC9F stderr:\n", ecalcresult.stderr)
+            
+            # Wait to ensure ECALC9F finishes writing the file
+            time.sleep(0.3)  # Wait 300 ms to ensure ecalc9f.dat is flushed to disk
+            
+            # Check the output file is valid before reading it
+            if not os.path.exists(ecalcfinal_file) or os.path.getsize(ecalcfinal_file) < 100:
+                raise ValueError(f"{ecalcfinal_file} does not exist or is too small — possible ECALC9F crash or truncation.")
+        except subprocess.CalledProcessError as e:
+            print(f"ECALC9F crashed: {e}")
+            print("stdout:\n", e.stdout)
+            print("stderr:\n", e.stderr)
+            return  # Skip this sample
+        
+        try:
+            if not os.path.exists(ecalcfinal_file) or os.path.getsize(ecalcfinal_file) == 0:
+                raise ValueError(f"{ecalcfinal_file} does not exist or is empty")
+
+            data_final = np.loadtxt(ecalcfinal_file, skiprows=13, usecols=cols)
+            
+            if data_final.size == 0:
+                raise ValueError(f"{ecalcfinal_file} is empty after skipping rows.")
+
+            print(data_final)
+        except Exception as e:
+            print(f"Error loading {ecalcfinal_file}: {e}")
+            return  # Skip this sample if data is invalid
+
         # OK, let's collect all eperp, elong, trans data (but then we need to avg over trials)
         zvals.append(data_final[:,1])
         eperps.append(data_final[:,2]*1000)
@@ -79,15 +113,15 @@ def singleCell(input_file, mean, stdev, meanp, stdevp, sample_size, no_cavities,
     # DATA ANALYSIS + PLOTTING
     for a in trange(len(eperps)):
         
-        for i in trange(len(eperps[a])):
+        for k in trange(len(eperps[a])):
             p = []
             l = []
             t = []
 
-            for j in trange(len(eperps)):
-                p.append(eperps[j][i])
-                l.append(elongs[j][i])
-                t.append(transs[j][i])
+            for c in trange(len(eperps)):
+                p.append(eperps[c][k])
+                l.append(elongs[c][k])
+                t.append(transs[c][k])
                 
             
             p = np.asarray(p)
@@ -118,13 +152,23 @@ def singleCell(input_file, mean, stdev, meanp, stdevp, sample_size, no_cavities,
         os.rename("./for009_noerr.txt", "./for009.dat")
         
         ecalcresult = run_ecalc9f(ecalc9f_file)
-        data_final = np.loadtxt(ecalcfinal_file,skiprows=13, usecols=cols)
+        try:
+            if not os.path.exists(ecalcfinal_file) or os.path.getsize(ecalcfinal_file) == 0:
+                raise ValueError(f"{ecalcfinal_file} does not exist or is empty")
 
-        # OK, let's collect all eperp, elong, trans data (but then we need to avg over trials)
-        zvals_noerr.append(data_final[:,1])
-        eperps_noerr.append(data_final[:,2]*1000)
-        elongs_noerr.append(data_final[:,3]*1000)
-        transs_noerr.append(data_final[:,4]*100/data_final[0,4])
+            data_final = np.loadtxt(ecalcfinal_file, skiprows=13, usecols=cols)
+
+            if data_final.size == 0:
+                raise ValueError(f"{ecalcfinal_file} is empty after skipping rows.")
+
+            zvals_noerr.append(data_final[:,1])
+            eperps_noerr.append(data_final[:,2]*1000)
+            elongs_noerr.append(data_final[:,3]*1000)
+            transs_noerr.append(data_final[:,4]*100/data_final[0,4])
+        except Exception as e:
+            print(f"Error loading no-error data: {e}")
+            return  # or continue, depending on what you want to do
+
         
         print("NOERR G4bl and Ecalc9f calculations completed successfully.")
         os.rename("./for009.dat", f"./for009_noerr{int(stage_no+1)}.txt", )
