@@ -227,7 +227,4 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig("./stage" + str(input_stage) +"_varrfgradphtol_trans"+"_sample-size_" + str(args.sample_size) +"_"+str(args.number_of_particles) +"_"+str(args.stdev)+"_"+str(args.stdev_phase)+".png")
     plt.close()
-    
-            
-    
         
