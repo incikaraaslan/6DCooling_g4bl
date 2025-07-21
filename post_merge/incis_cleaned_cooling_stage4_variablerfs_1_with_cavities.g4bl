@@ -1,0 +1,595 @@
+# POST 6D - RECTILINEAR LATTICE - STAGE 04 - Version 2.2.1
+
+# UNSET PARAMS -- These are default values ONLY — will be overridden if set on command line
+param -unset filename="for009"
+param -unset last=200 # Number of particles in your simulation
+param -unset final_output="beam_stage4_out"
+
+# QGSP is the "default" physics use-case for HEP
+physics QGSP_BERT_EMX 
+param pi=3.1415926 
+
+# CELL PROPERTIES
+
+param ncells=60 # Number of coil-RF cavity-absorber setup we have
+param cell_length=1250 #mm
+
+# COIL AND SOLENOID PROPERTIES
+
+param coilname1=coil1
+param coilname2=coil2
+
+param coil_length1=80.49590188750338
+param coil_radius1=175
+param coil_width1=200
+param solpos1=0.10805325236026425
+param current1=115.20255175888389
+
+param bendpos=0.1
+param angle=1.5
+
+param coil_length2=305.2462411020286
+param coil_radius2=450
+param coil_width2=225
+param current2=110.06448256765512
+param solpos2=0.2904738502730546
+
+param angle=1.5
+param bendpos=0.1
+
+# DIPOLE PROPERTIES
+
+param dipole=0.155
+param dipole_length=100
+
+# RF CAVITY
+
+param pres=35 # PRESSURE
+
+param rf_length=220
+param rf_fre=0.352
+param rf_grad=24.083104149360217
+param rf_ph=27.906663869941873
+
+param rf_window_length=0.045
+param wallthick=$rf_window_length
+
+
+# material H2 Z=1 A=1.01 density=0.000090*$pres pressure=$pres
+param cavity_gas=Vacuum
+#material cavity_gas H,0.99 O,0.01 density=0.0035 pressure=$pres
+#param worldMaterial=H2
+
+# PIPE AND FRINGE FIELDS
+param pipe_radius=95
+param pipe_diameter=2*$pipe_radius
+param fringe_length=4*$pipe_radius
+param pipe_length=($cell_length-3*($rf_length+2*$wallthick))/2 # param pipe_length=($cell_length-3*($rf_length+2*$wallthick))/2
+
+# ABSORBER WEDGE 
+param wedge_window_length=0.15
+param half_wedge_length=200
+param wedge_apex=120
+
+# CLOSED ORBIT?
+param end_z=$cell_length*($ncells+1)+10
+param x_last=-6.4
+param y_last=-7.97
+param x_off=-5.455087114416996
+param y_off=-7.138307420771727
+
+######################## PARTICLES AND DISTRIBUTION #######################
+
+param first=1
+
+param ref_momentum=203
+
+reference particle=mu+ referenceMomentum=$ref_momentum beamT=778.698 beamX=$x_off beamY=$y_off noEfield=1 noBfield=1 noEloss=1
+beam ascii file=beam_stage4.beam firstEvent=$first lastEvent=$last beamX=$x_off-$x_last beamY=$y_off-$y_last
+# beam_stage3_noerrout.beam
+trackcuts killSecondaries=1
+trace nTrace=1
+
+virtualdetector beamDet radius=800 length=0.001 filename=$final_output format=ascii
+
+
+########################## DEFINE STRUCTURES ################################
+
+genericbend solbend fieldWidth=1000 fieldHeight=1000 fieldLength=$dipole_length \
+               ironWidth=-1 ironHeight=-1 ironLength=-1 \
+               openAperture=1 \
+               By=$dipole kill=1 fringe=0 ironColor=1,1,1
+
+
+fieldexpr fringe_left length=$fringe_length width=2*$pipe_radius height=2*$pipe_radius By=$dipole*((1+exp(5*-z/$pipe_diameter)*cos(5*y/$pipe_diameter))/(1+2*exp(5*-z/$pipe_diameter)*cos(5*y/$pipe_diameter)+exp(2*5*-z/$pipe_diameter))) Bz=-$dipole*exp(5*-z/$pipe_diameter)*sin(5*y/$pipe_diameter)/(1+2*exp(5*-z/$pipe_diameter)*cos(5*y/$pipe_diameter)+exp(2*5*-z/$pipe_diameter)) nX=2 nY=100 nZ=150 
+fieldexpr fringe_right length=$fringe_length width=2*$pipe_radius height=2*$pipe_radius By=$dipole*((1+exp(5*z/$pipe_diameter)*cos(5*y/$pipe_diameter))/(1+2*exp(5*z/$pipe_diameter)*cos(5*y/$pipe_diameter)+exp(2*5*z/$pipe_diameter))) Bz=-$dipole*exp(5*z/$pipe_diameter)*sin(5*y/$pipe_diameter)/(1+2*exp(5*z/$pipe_diameter)*cos(5*y/$pipe_diameter)+exp(2*5*z/$pipe_diameter)) nX=2 nY=100 nZ=150 
+
+coil $coilname1 innerRadius=$coil_radius1 outerRadius=$coil_radius1+$coil_width1 length=$coil_length1 material=Cu maxZ=$cell_length maxR=$coil_radius1+4*$coil_width1 #tolerance=0.02
+solenoid sol1 coilName=$coilname1 current=$current1 kill=1 
+solenoid sol2 coilName=$coilname1 current=-$current1 kill=1 
+
+coil $coilname2 innerRadius=$coil_radius2 outerRadius=$coil_radius2+$coil_width2 length=$coil_length2 material=Cu maxZ=$cell_length maxR=($coil_radius2+4*$coil_width2) #tolerance=0.02
+solenoid sol3 coilName=$coilname2 current=$current2 kill=1 
+solenoid sol4 coilName=$coilname2 current=-$current2 kill=1 
+
+tubs pipe innerRadius=$pipe_radius outerRadius=$pipe_radius+1 length=$pipe_length kill=1
+
+# -- START CAVITY DEFINITIONS --
+pillbox cav00 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.28990201511479 phaseAcc=30.335266658816785 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav01 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.29772647881846 phaseAcc=20.356889556234584 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav02 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.124945285594034 phaseAcc=9.915565573079043 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav10 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.425738046067533 phaseAcc=23.633392013260426 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav11 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.01647715961973 phaseAcc=24.801485232592714 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav12 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.80136386434566 phaseAcc=9.447207414092144 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav20 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.018885754881712 phaseAcc=24.274081258153174 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav21 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.22832406690686 phaseAcc=31.317502412868908 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav22 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.667275763225692 phaseAcc=46.90521551572532 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav30 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.39620664555945 phaseAcc=8.608273228606546 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav31 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.92234853184391 phaseAcc=30.875340104441914 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav32 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.84643086692059 phaseAcc=13.55814582705241 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav40 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.31125164386492 phaseAcc=24.395410529351462 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav41 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.620442803191384 phaseAcc=27.772385232579275 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav42 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.888639747668886 phaseAcc=19.626579593288994 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav50 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.547329171560886 phaseAcc=18.41623156718476 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav51 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.160522645235257 phaseAcc=31.13916846620871 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav52 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.155011527007904 phaseAcc=34.66017745010587 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav60 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.092942019533325 phaseAcc=24.46727316083033 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav61 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.01930860865275 phaseAcc=52.767081973432305 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav62 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.687592172195117 phaseAcc=31.176591222295464 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav70 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.95189984458207 phaseAcc=18.337710303155355 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav71 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.438899985462232 phaseAcc=16.571411281035665 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav72 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.15390561938752 phaseAcc=30.435285092389478 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav80 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.78442013347298 phaseAcc=21.44338745597523 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav81 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.432953458446455 phaseAcc=15.874855040891239 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav82 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.767618600501343 phaseAcc=45.69837782222977 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav90 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.995540274095607 phaseAcc=35.01699631663731 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav91 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.377562991433845 phaseAcc=24.05817098573011 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav92 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.46863676283379 phaseAcc=42.47956200873758 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav100 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.905727824194702 phaseAcc=33.66423558327734 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav101 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=26.013084091115182 phaseAcc=31.518040448283028 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav102 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.88469159738704 phaseAcc=17.43617180742008 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav110 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.737263529326064 phaseAcc=38.282357696828115 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav111 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.675606293256084 phaseAcc=34.375949251205334 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav112 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.659457327086574 phaseAcc=37.43177626485553 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav120 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.511553899429153 phaseAcc=22.74353315855711 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav121 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.197918567077988 phaseAcc=23.985395566378752 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav122 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.752200766190544 phaseAcc=25.57903383074379 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav130 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.148976681433744 phaseAcc=43.00630082471223 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav131 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.561565011962777 phaseAcc=37.172079361797714 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav132 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.053945110938685 phaseAcc=38.75141828105042 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav140 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.85728372188794 phaseAcc=37.596321526827026 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav141 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.962197464281722 phaseAcc=21.432973513679382 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav142 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.257625528995728 phaseAcc=23.620114134505137 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav150 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.866874200304114 phaseAcc=21.91167643013316 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav151 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.7915881831233 phaseAcc=21.96324822926931 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav152 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.017088079119997 phaseAcc=28.545530212715605 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav160 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.37003583560537 phaseAcc=22.784585459959082 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav161 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.001873428780748 phaseAcc=19.674150384441397 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav162 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.172353231641814 phaseAcc=17.086557341122315 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav170 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.85088110511393 phaseAcc=38.51150380878815 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav171 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.759192012829583 phaseAcc=21.21680066663331 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav172 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.11386796863379 phaseAcc=38.595039849145195 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav180 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.186532957283795 phaseAcc=17.536950419198362 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav181 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.20533568313916 phaseAcc=32.53632780073748 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav182 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.25643057231491 phaseAcc=26.575286750547242 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav190 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.40087025819876 phaseAcc=6.90591446053185 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav191 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.93448323730742 phaseAcc=30.20823109957173 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav192 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.830839901059694 phaseAcc=28.63854900140503 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav200 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.138223341797023 phaseAcc=14.260441141667743 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav201 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.46978129916571 phaseAcc=35.47020005986864 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav202 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.295997996611586 phaseAcc=33.796685835074925 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav210 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.59466200514828 phaseAcc=24.53281397025847 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav211 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.41966789223317 phaseAcc=46.913890638025045 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav212 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.70261443301289 phaseAcc=37.95013285832579 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav220 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.300806207978013 phaseAcc=43.4623143439375 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav221 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.50053863333587 phaseAcc=35.11942193558311 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav222 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.212454204066155 phaseAcc=20.96235837750475 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav230 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.283575892177947 phaseAcc=20.816970087730432 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav231 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.481094218814476 phaseAcc=37.77177941922023 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav232 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.768271584321436 phaseAcc=20.46275028905322 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav240 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.965869130397966 phaseAcc=19.812651784142012 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav241 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.828697457549737 phaseAcc=35.2948910573103 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav242 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.62664567642413 phaseAcc=16.65479300221831 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav250 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.192931767240232 phaseAcc=27.61879970924186 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav251 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.068579731824247 phaseAcc=18.758308802954936 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav252 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.1013398264479 phaseAcc=25.09649214969737 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav260 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.94308662520783 phaseAcc=32.584949163412055 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav261 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.181177451724242 phaseAcc=28.5673412377872 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav262 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.754780165719485 phaseAcc=49.02961177098777 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav270 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.37578762906169 phaseAcc=14.610992487896848 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav271 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.670083730806653 phaseAcc=29.97650402858737 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav272 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.932402020757824 phaseAcc=30.946432803390547 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav280 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.94943627979416 phaseAcc=16.025032619077628 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav281 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.7468854928491 phaseAcc=26.54577878101571 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav282 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.697579479032893 phaseAcc=40.36494787695201 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav290 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.243855659213963 phaseAcc=15.940666308819477 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav291 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.160018057440034 phaseAcc=37.22021283571085 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav292 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.112738101402428 phaseAcc=17.9486951211354 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav300 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.723894737717625 phaseAcc=17.873509996441932 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav301 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.992605265435028 phaseAcc=36.30040610579889 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav302 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.169486372974394 phaseAcc=26.552170762327467 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav310 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.58324838761393 phaseAcc=21.637553791611325 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav311 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.313560321732034 phaseAcc=14.971924929875485 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav312 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.067678866272885 phaseAcc=34.727177274477796 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav320 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.95286832673525 phaseAcc=30.203341598276477 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav321 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.31412743623628 phaseAcc=39.15275178270082 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav322 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.48961837083794 phaseAcc=24.653635270449396 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav330 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.364744878698883 phaseAcc=29.5727423048623 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav331 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.452400152045577 phaseAcc=25.099155356318512 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav332 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.393883664779754 phaseAcc=24.680678474962907 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav340 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.04493593274214 phaseAcc=41.17848307981575 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav341 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.64456097421146 phaseAcc=16.078882225312604 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav342 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.383083470609254 phaseAcc=4.8543635503013505 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav350 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.76584905738539 phaseAcc=46.08115151815052 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav351 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.102027735697316 phaseAcc=27.61157336383415 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav352 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.926295731505427 phaseAcc=26.207100926167563 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav360 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.63451326472624 phaseAcc=38.8688717423727 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav361 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.805117292077256 phaseAcc=24.553313221470795 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav362 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.10321244488651 phaseAcc=29.891028330160733 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav370 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.630938212140588 phaseAcc=33.71919828217108 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav371 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.96120126238878 phaseAcc=23.26425746217914 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav372 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.4203073029674 phaseAcc=20.61298329348113 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav380 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=21.903553061924505 phaseAcc=39.99466158263874 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav381 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.531041207433056 phaseAcc=5.169970945269256 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav382 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.456771540883885 phaseAcc=37.801814123732996 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav390 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.727752942264907 phaseAcc=34.318364498658774 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav391 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.540849717949804 phaseAcc=21.33946416879596 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav392 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.22246689389206 phaseAcc=42.712720242001254 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav400 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.479890459418655 phaseAcc=20.723668914357944 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav401 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.050464858485572 phaseAcc=39.186874639243214 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav402 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.31945169527837 phaseAcc=17.323680945112635 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav410 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.02378520226289 phaseAcc=28.69497638673218 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav411 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.249916518031483 phaseAcc=30.92251064307575 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav412 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.063681641590982 phaseAcc=34.57462917366913 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav420 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.181607021550136 phaseAcc=35.64242575266269 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav421 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.765254015204842 phaseAcc=16.653262626631133 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav422 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.508438895305876 phaseAcc=26.35693913431453 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav430 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.677516694651896 phaseAcc=34.75083137288743 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav431 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.791034678579237 phaseAcc=31.333155852974873 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav432 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.634892222385833 phaseAcc=33.93809172836754 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav440 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.40515974020317 phaseAcc=22.137688284835686 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav441 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.879843380637745 phaseAcc=35.38769269186421 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav442 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.797038667417684 phaseAcc=55.55520853550098 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav450 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.62398938633512 phaseAcc=15.956759555366807 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav451 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.719494062242394 phaseAcc=28.222515945295292 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav452 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.683230135768188 phaseAcc=45.391610800954226 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav460 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.676548097102177 phaseAcc=29.104816400700763 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav461 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.923776720135848 phaseAcc=20.46222613291929 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav462 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.335123577272853 phaseAcc=32.651084655177314 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav470 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.090654093007647 phaseAcc=33.87076095682245 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav471 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=21.602133962647507 phaseAcc=12.728427870655635 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav472 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.105462830322068 phaseAcc=24.97658297465198 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav480 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.46459823102558 phaseAcc=45.464653346509486 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav481 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.998126612461373 phaseAcc=35.200674698727326 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav482 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.955746664630656 phaseAcc=8.961039182877968 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav490 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.89440447024594 phaseAcc=41.16777296225965 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav491 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.390571536900826 phaseAcc=24.66412035538104 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav492 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.843295323314706 phaseAcc=59.51969091893841 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav500 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.443039112247856 phaseAcc=37.50205912794152 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav501 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.57191542830323 phaseAcc=15.634005921817982 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav502 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.676495405454094 phaseAcc=41.837007087607724 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav510 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.55600627438179 phaseAcc=20.17779097341923 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav511 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.64767193476471 phaseAcc=23.67368203267269 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav512 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.73905614867061 phaseAcc=39.03842519098852 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav520 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.955682415845473 phaseAcc=38.374668921440175 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav521 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.510803550950403 phaseAcc=24.70395410198409 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav522 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.36539818687012 phaseAcc=26.122150711308485 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav530 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.25242428236149 phaseAcc=28.991943927760364 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav531 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.873324163185043 phaseAcc=19.03213487579187 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav532 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.784600022461923 phaseAcc=27.53018658171735 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav540 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.107064495839104 phaseAcc=24.30957888644162 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav541 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.40093395262609 phaseAcc=43.36162473689358 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav542 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.439088439296512 phaseAcc=39.67034627257647 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav550 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.000136443694633 phaseAcc=16.71439044362387 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav551 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.643132509020855 phaseAcc=33.23209237589873 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav552 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.83177252503389 phaseAcc=16.166671401258817 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav560 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.688663983103112 phaseAcc=35.713547883618375 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav561 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.45492587860686 phaseAcc=35.96521513731865 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav562 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.776486363611834 phaseAcc=42.87706931188866 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav570 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.770306482849655 phaseAcc=11.085050624333864 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav571 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.259475756324143 phaseAcc=16.88188037766219 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav572 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.72565599238767 phaseAcc=51.96584573668031 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav580 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.850766115846206 phaseAcc=31.766883633312666 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav581 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.228245408844124 phaseAcc=37.120305455729536 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav582 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=26.106892041482375 phaseAcc=15.065036511780683 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav590 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.315300855243557 phaseAcc=23.33378036622946 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav591 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=23.124039813651223 phaseAcc=35.65471233789422 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav592 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.86489569853284 phaseAcc=37.452233871154604 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav600 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=25.108644042944675 phaseAcc=26.666606872643168 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav601 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=24.001898947413014 phaseAcc=37.47027630379687 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+pillbox cav602 innerLength=$rf_length irisRadius=$pipe_radius frequency=$rf_fre maxGradient=22.64986146361146 phaseAcc=26.89872816197802 winMat=Be cavityMaterial=$cavity_gas win1Thick=$rf_window_length win2Thick=$rf_window_length wallThick=$wallthick collarThick=0 kill=1
+
+
+# -- END CAVITY DEFINITIONS --
+
+box wedge_window height=2*$half_wedge_length/2/tan($wedge_apex/2*$pi/180) length=$wedge_window_length width=2*$half_wedge_length/2/sin($wedge_apex/2*$pi/180) material=Be
+trap all_wedge  height=2*$half_wedge_length/2/tan($wedge_apex/2*$pi/180) upperWidth=0.001 lowerWidth=2*$half_wedge_length length=2*$half_wedge_length/2/tan($wedge_apex/2*$pi/180) material=LH2
+
+########################## PLACING ELEMENTS ##########################
+
+do i -2 $ncells
+place sol1 z=$i*$cell_length+$solpos1*$cell_length 
+place sol3 z=$i*$cell_length+$solpos2*$cell_length
+place sol4 z=$i*$cell_length+$cell_length-$solpos2*$cell_length 
+place sol2 z=$i*$cell_length+$cell_length-$solpos1*$cell_length
+enddo
+
+do i -2 $ncells
+place solbend z=$i*$cell_length+$bendpos*$cell_length rename=solbend_a_$i
+place solbend z=$i*$cell_length+$cell_length-$bendpos*$cell_length rename=solbend_b_$i
+enddo
+
+do i -2 $ncells
+place fringe_left z=$i*$cell_length+$bendpos*$cell_length-$dipole_length/2-$fringe_length/2
+place fringe_right z=$i*$cell_length+$bendpos*$cell_length+$dipole_length/2+$fringe_length/2+0.01
+place fringe_left z=$i*$cell_length+$cell_length-$bendpos*$cell_length-$dipole_length/2-$fringe_length/2
+place fringe_right z=$i*$cell_length+$cell_length-$bendpos*$cell_length+$dipole_length/2+$fringe_length/2+0.01
+enddo
+
+do i 0 $ncells
+place pipe z=$i*$cell_length+$pipe_length/2
+place pipe z=$i*$cell_length+$cell_length-$pipe_length/2
+enddo
+
+# 3 CAVITIES
+# -- START CAVITY PLACEMENTS --
+
+place cav00 z=0*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_0 
+place cav01 z=0*$cell_length+$cell_length/2 rename=rf_d_0 
+place cav02 z=0*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_0
+
+place cav10 z=1*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_1 
+place cav11 z=1*$cell_length+$cell_length/2 rename=rf_d_1 
+place cav12 z=1*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_1
+
+place cav20 z=2*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_2 
+place cav21 z=2*$cell_length+$cell_length/2 rename=rf_d_2 
+place cav22 z=2*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_2
+
+place cav30 z=3*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_3 
+place cav31 z=3*$cell_length+$cell_length/2 rename=rf_d_3 
+place cav32 z=3*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_3
+
+place cav40 z=4*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_4 
+place cav41 z=4*$cell_length+$cell_length/2 rename=rf_d_4 
+place cav42 z=4*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_4
+
+place cav50 z=5*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_5 
+place cav51 z=5*$cell_length+$cell_length/2 rename=rf_d_5 
+place cav52 z=5*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_5
+
+place cav60 z=6*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_6 
+place cav61 z=6*$cell_length+$cell_length/2 rename=rf_d_6 
+place cav62 z=6*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_6
+
+place cav70 z=7*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_7 
+place cav71 z=7*$cell_length+$cell_length/2 rename=rf_d_7 
+place cav72 z=7*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_7
+
+place cav80 z=8*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_8 
+place cav81 z=8*$cell_length+$cell_length/2 rename=rf_d_8 
+place cav82 z=8*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_8
+
+place cav90 z=9*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_9 
+place cav91 z=9*$cell_length+$cell_length/2 rename=rf_d_9 
+place cav92 z=9*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_9
+
+place cav100 z=10*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_10 
+place cav101 z=10*$cell_length+$cell_length/2 rename=rf_d_10 
+place cav102 z=10*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_10
+
+place cav110 z=11*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_11 
+place cav111 z=11*$cell_length+$cell_length/2 rename=rf_d_11 
+place cav112 z=11*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_11
+
+place cav120 z=12*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_12 
+place cav121 z=12*$cell_length+$cell_length/2 rename=rf_d_12 
+place cav122 z=12*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_12
+
+place cav130 z=13*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_13 
+place cav131 z=13*$cell_length+$cell_length/2 rename=rf_d_13 
+place cav132 z=13*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_13
+
+place cav140 z=14*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_14 
+place cav141 z=14*$cell_length+$cell_length/2 rename=rf_d_14 
+place cav142 z=14*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_14
+
+place cav150 z=15*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_15 
+place cav151 z=15*$cell_length+$cell_length/2 rename=rf_d_15 
+place cav152 z=15*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_15
+
+place cav160 z=16*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_16 
+place cav161 z=16*$cell_length+$cell_length/2 rename=rf_d_16 
+place cav162 z=16*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_16
+
+place cav170 z=17*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_17 
+place cav171 z=17*$cell_length+$cell_length/2 rename=rf_d_17 
+place cav172 z=17*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_17
+
+place cav180 z=18*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_18 
+place cav181 z=18*$cell_length+$cell_length/2 rename=rf_d_18 
+place cav182 z=18*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_18
+
+place cav190 z=19*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_19 
+place cav191 z=19*$cell_length+$cell_length/2 rename=rf_d_19 
+place cav192 z=19*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_19
+
+place cav200 z=20*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_20 
+place cav201 z=20*$cell_length+$cell_length/2 rename=rf_d_20 
+place cav202 z=20*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_20
+
+place cav210 z=21*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_21 
+place cav211 z=21*$cell_length+$cell_length/2 rename=rf_d_21 
+place cav212 z=21*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_21
+
+place cav220 z=22*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_22 
+place cav221 z=22*$cell_length+$cell_length/2 rename=rf_d_22 
+place cav222 z=22*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_22
+
+place cav230 z=23*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_23 
+place cav231 z=23*$cell_length+$cell_length/2 rename=rf_d_23 
+place cav232 z=23*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_23
+
+place cav240 z=24*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_24 
+place cav241 z=24*$cell_length+$cell_length/2 rename=rf_d_24 
+place cav242 z=24*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_24
+
+place cav250 z=25*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_25 
+place cav251 z=25*$cell_length+$cell_length/2 rename=rf_d_25 
+place cav252 z=25*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_25
+
+place cav260 z=26*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_26 
+place cav261 z=26*$cell_length+$cell_length/2 rename=rf_d_26 
+place cav262 z=26*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_26
+
+place cav270 z=27*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_27 
+place cav271 z=27*$cell_length+$cell_length/2 rename=rf_d_27 
+place cav272 z=27*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_27
+
+place cav280 z=28*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_28 
+place cav281 z=28*$cell_length+$cell_length/2 rename=rf_d_28 
+place cav282 z=28*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_28
+
+place cav290 z=29*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_29 
+place cav291 z=29*$cell_length+$cell_length/2 rename=rf_d_29 
+place cav292 z=29*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_29
+
+place cav300 z=30*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_30 
+place cav301 z=30*$cell_length+$cell_length/2 rename=rf_d_30 
+place cav302 z=30*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_30
+
+place cav310 z=31*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_31 
+place cav311 z=31*$cell_length+$cell_length/2 rename=rf_d_31 
+place cav312 z=31*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_31
+
+place cav320 z=32*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_32 
+place cav321 z=32*$cell_length+$cell_length/2 rename=rf_d_32 
+place cav322 z=32*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_32
+
+place cav330 z=33*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_33 
+place cav331 z=33*$cell_length+$cell_length/2 rename=rf_d_33 
+place cav332 z=33*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_33
+
+place cav340 z=34*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_34 
+place cav341 z=34*$cell_length+$cell_length/2 rename=rf_d_34 
+place cav342 z=34*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_34
+
+place cav350 z=35*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_35 
+place cav351 z=35*$cell_length+$cell_length/2 rename=rf_d_35 
+place cav352 z=35*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_35
+
+place cav360 z=36*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_36 
+place cav361 z=36*$cell_length+$cell_length/2 rename=rf_d_36 
+place cav362 z=36*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_36
+
+place cav370 z=37*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_37 
+place cav371 z=37*$cell_length+$cell_length/2 rename=rf_d_37 
+place cav372 z=37*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_37
+
+place cav380 z=38*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_38 
+place cav381 z=38*$cell_length+$cell_length/2 rename=rf_d_38 
+place cav382 z=38*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_38
+
+place cav390 z=39*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_39 
+place cav391 z=39*$cell_length+$cell_length/2 rename=rf_d_39 
+place cav392 z=39*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_39
+
+place cav400 z=40*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_40 
+place cav401 z=40*$cell_length+$cell_length/2 rename=rf_d_40 
+place cav402 z=40*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_40
+
+place cav410 z=41*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_41 
+place cav411 z=41*$cell_length+$cell_length/2 rename=rf_d_41 
+place cav412 z=41*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_41
+
+place cav420 z=42*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_42 
+place cav421 z=42*$cell_length+$cell_length/2 rename=rf_d_42 
+place cav422 z=42*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_42
+
+place cav430 z=43*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_43 
+place cav431 z=43*$cell_length+$cell_length/2 rename=rf_d_43 
+place cav432 z=43*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_43
+
+place cav440 z=44*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_44 
+place cav441 z=44*$cell_length+$cell_length/2 rename=rf_d_44 
+place cav442 z=44*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_44
+
+place cav450 z=45*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_45 
+place cav451 z=45*$cell_length+$cell_length/2 rename=rf_d_45 
+place cav452 z=45*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_45
+
+place cav460 z=46*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_46 
+place cav461 z=46*$cell_length+$cell_length/2 rename=rf_d_46 
+place cav462 z=46*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_46
+
+place cav470 z=47*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_47 
+place cav471 z=47*$cell_length+$cell_length/2 rename=rf_d_47 
+place cav472 z=47*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_47
+
+place cav480 z=48*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_48 
+place cav481 z=48*$cell_length+$cell_length/2 rename=rf_d_48 
+place cav482 z=48*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_48
+
+place cav490 z=49*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_49 
+place cav491 z=49*$cell_length+$cell_length/2 rename=rf_d_49 
+place cav492 z=49*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_49
+
+place cav500 z=50*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_50 
+place cav501 z=50*$cell_length+$cell_length/2 rename=rf_d_50 
+place cav502 z=50*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_50
+
+place cav510 z=51*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_51 
+place cav511 z=51*$cell_length+$cell_length/2 rename=rf_d_51 
+place cav512 z=51*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_51
+
+place cav520 z=52*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_52 
+place cav521 z=52*$cell_length+$cell_length/2 rename=rf_d_52 
+place cav522 z=52*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_52
+
+place cav530 z=53*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_53 
+place cav531 z=53*$cell_length+$cell_length/2 rename=rf_d_53 
+place cav532 z=53*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_53
+
+place cav540 z=54*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_54 
+place cav541 z=54*$cell_length+$cell_length/2 rename=rf_d_54 
+place cav542 z=54*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_54
+
+place cav550 z=55*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_55 
+place cav551 z=55*$cell_length+$cell_length/2 rename=rf_d_55 
+place cav552 z=55*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_55
+
+place cav560 z=56*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_56 
+place cav561 z=56*$cell_length+$cell_length/2 rename=rf_d_56 
+place cav562 z=56*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_56
+
+place cav570 z=57*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_57 
+place cav571 z=57*$cell_length+$cell_length/2 rename=rf_d_57 
+place cav572 z=57*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_57
+
+place cav580 z=58*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_58 
+place cav581 z=58*$cell_length+$cell_length/2 rename=rf_d_58 
+place cav582 z=58*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_58
+
+place cav590 z=59*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_59 
+place cav591 z=59*$cell_length+$cell_length/2 rename=rf_d_59 
+place cav592 z=59*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_59
+
+place cav600 z=60*$cell_length+$cell_length/2-(2*$wallthick+$rf_length) rename=rf_c_60 
+place cav601 z=60*$cell_length+$cell_length/2 rename=rf_d_60 
+place cav602 z=60*$cell_length+$cell_length/2+(2*$wallthick+$rf_length) rename=rf_e_60
+# -- END CAVITY PLACEMENTS --
+
+do i 0 $ncells
+place all_wedge z=$i*$cell_length  rotation=X90,Y90 x=$x_off rename=wedge_$i
+enddo
+
+do i 0 $ncells
+place wedge_window z=$i*$cell_length-$half_wedge_length/2-$wedge_window_length/(cos($wedge_apex/2*$pi/180)) x=$x_off rotation=Y-$wedge_apex/2 color=1,0,1
+place wedge_window z=$i*$cell_length+$half_wedge_length/2+$wedge_window_length/(cos($wedge_apex/2*$pi/180)) x=$x_off rotation=Y$wedge_apex/2 color=1,0,1
+enddo
+
+########################################################################################################
+# Save particle distribution after the final cell
+place beamDet z=$end_z
+# printfield type=grid file=field_cell.dat field=Bx,By,Bz X0=-180 Y0=-180 Z0=0 nX=61 dX=6 nY=61 dY=6 nZ=201 dZ=$cell_length/200
+zntuple output zloop=0:$ncells*$cell_length:$cell_length format=for009 require=PDGid==-13 file=$filename referenceParticle=1
