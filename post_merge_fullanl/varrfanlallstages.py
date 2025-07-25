@@ -94,9 +94,6 @@ if __name__ == "__main__":
             last_values = data[-1]
             last_data.append([last_values[0],last_values[1],last_values[2],last_values[3]])
             
-            # GRAB OPTION 1
-            # err_data.append(singleStage(filename, mean, stdev, meanp, stdevp, ncavities, ncells, args.number_of_particles, stage_no, sample_no))
-        # averages, sems = finalStats(err_data)
     
     # GRAB OPTION 0
     z_last = []
