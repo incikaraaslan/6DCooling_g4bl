@@ -26,9 +26,9 @@ Checklist: Complete the following while writing up this document
 
 -->
 
-# Tolerance Studies for the IMCC Rectilinear 6D Ionization Cooling Channel
+# Tolerance Studies for the IMCC Rectilinear 6D Post-Merge Ionization Cooling Channel
 
-This is the repository that contains all work from Summer 2025 onwards involving the development of a G4Beamline simulation for the tolerance study and error analysis of the initial cooling channel devised as the baseline by the International Muon Collider Collaboration. The aim is to develop design suggestions.
+This is the repository that contains all work from Summer 2025 onwards involving the development of a G4Beamline simulation for the tolerance study and error analysis of the post-merge part of 6D cooling channel devised as the baseline by the International Muon Collider Collaboration. The aim is to develop design suggestions.
 The progress over Summer 2025 for this project is logged daily at: https://tinyurl.com/incis-summer-progress.
 
 ## Table of Contents
@@ -43,23 +43,30 @@ The progress over Summer 2025 for this project is logged daily at: https://tinyu
 ## 10 TeV Muon Collider and Tolerance Studies
 For the purposes of effectively constructing a 10 TeV center-of-mass Muon Collider, it is crucial to have a cooling section where the goal is to rapidly decrease muon beam emittance to reach the desired luminosity for the eventual $\mu^+$ and $\mu+-$ collision in the acceleration ring. 
 
-We can reduce the beam emittance without violating Liouville's theorem by applying non-conservative forces via collisions with electrons in the low-Z (LH) wedge absorber in the process called ionization cooling. The International Muon Collider Collaboration (IMCC) has proposed the rectilinear channel to facilitate ionization cooling, which includes solenoids, RF cavities, wedge absorbers, and pipes. However, the specifications we optimize for in our simulations for the solenoids and RF cavities within may not be built exactly.
+We can reduce the beam emittance without violating Liouville's theorem by applying non-conservative forces through collisions with electrons in the low-Z (LH) wedge absorber, a process known as ionization cooling. The International Muon Collider Collaboration (IMCC) has proposed the rectilinear channel to facilitate ionization cooling, which includes solenoids, RF cavities, wedge absorbers, and pipes. However, the specifications we optimize for in our simulations for the solenoids and RF cavities may not be built exactly as we intended. This is why we deliberately introduce deviations to the specs of components one by one to probe the emittance and transmission changes--which is called tolerance studies.
 
+Simulations of both the MAP and the newer IMCC design were made using G4Beamline, a particle tracking simulation program based on the Monte Carlo toolkit GEANT4. Further calculations of transverse and longitudinal emittance, transmission (i.e. what % of particles survive) were done through ECALC9F, file-based version of the post-processing utility ECALC9, which analyses the phase space characteristics of the beam.
 
 ## IMCC Design
-
 ### IMCC Rectilinear Channel Introduction
 
-Details
+In 6D cooling via the IMCC Rectilinear Channel, solenoids are used as focusing magnets. Momentum dispersion is introduced by dipole magnets, and phase space area reduction happens in low-Z (e.g., Liquid Hydrogen) wedge absorbers through ionization. Radiofrequency (RF) cavities reaccelerate the beam to compensate for energy losses in the absorber. In G4Beamline, the dipole magnets are not physically simulated but instead inserted as a field. Fringe fields are also included in the simulation.
 
-### Product specific detail 2
 
-Details
+### IMCC Post-Merge (B) Code
+
+The newest code for the IMCC Post-Merge can be found in https://github.com/MuonCollider-WG4/rectilinear/tree/main/new_lattice_with_larger_gaps/post_merge. Here, every stage of the 10 stages that make up the post-merge (B) rectilinear channel includes a particle distribution (beam_stage#.beam) that is inserted into that stage's g4beamline file (cooling_stage#.g4bl), and the resulting output will be in for009 format and as for009.dat. This output can be analyzed for the transmission, longitudinal and transverse emittance, etc. values through ECALC9f, which is why ecalc9f.dat and ecalc9f.inp files are also included in each folder. 
+
+However, when one needs to connect all 10 stages to simulate what a physically accurate version of the post-merge rectilinear channel looks like, the authors of the IMCC paper have included a separate file, extreg9.inp, which guides how one should manipulate the output particle distribution (for009.dat) from each stage to get the results discussed in the IMCC paper https://arxiv.org/pdf/2409.02613. More specifically, the 5th column of the "for009.dat" file shows the region number, and you can find "extreg9.inp" in every cooling stage folder. The number in the 3rd row in "extreg9.inp" means the region where the authors have taken out the beam and then used it for the input for the next stage. So, the parameter "ncells" in the g4bl input file doesn't tell you the actual number of cooling cells that are used in one cooling stage, and in fact, the number in "extreg9.inp" does.
 
 ## Inci's Current Execution
 
-## References
+With the IMCC way of modeling and executing the post-merge rectilinear channel model in g4bl in mind, this GitHub is organized as follows. 
 
-- Product spec doc
-- Epic links to create this product
-- ADRs or EDRs involved
+## References
+Stratakis, Diktys, and Robert B. Palmer. “Rectilinear six-dimensional ionization cooling channel for a muon collider: A theoretical and Numerical Study.” Physical Review Special Topics - Accelerators and Beams, vol. 18, no. 3, 6 Mar. 2015, https://doi.org/10.1103/physrevstab.18.031003. 
+Zhu, Ruihu, et al. “Design method, performance evaluation, and tolerance analysis of the rectilinear cooling channel for a Muon Collider.” Physical Review Accelerators and Beams, vol. 28, no. 4, 24 Apr. 2025, https://doi.org/10.1103/physrevaccelbeams.28.041003.
+Wiedemann, Helmut. Particle Accelerator Physics. Springer International Publishing, 2015. 
+Pasternak, J. “6D Cooling for a Muon Collider.” UK Muon Collider and nuStorm - 1st Collaboration Meeting, indico.stfc.ac.uk/event/194/contributions/1443/attachments/367/605/6D_Cooling07082020.pdf.  
+Yonehara, Katsuya. “MiniCourse: Accelerator Design for a multi-TeV Muon Collider”, March-June 2025.
+“Sketching out a Muon Collider.” CERN Courier, 8 May 2020, cerncourier.com/a/sketching-out-a-muon-collider/.  
