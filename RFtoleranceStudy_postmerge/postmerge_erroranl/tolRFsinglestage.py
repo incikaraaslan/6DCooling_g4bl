@@ -5,8 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from tqdm import trange
-from convertZ import convertZ, extract_region_beam
-from varfortol import insert_generated_blocks
+from convertStagePDistribution import convertZ, extract_region_beam
+from insertrfforG4BL import insert_generated_blocks
 import shutil
 
 def run_g4beamline(input_file, gradients, phases, which_stage, which_file, number_of_particles):
@@ -105,7 +105,7 @@ def singleStage(input_file, mean, stdev, meanp, stdevp, no_cavities, ncells, num
                 print("Ecalc9f calculations completed successfully.")
     
         os.rename("./for009.dat", f"./for009_werr_{stage_no}_{sample_no}.txt")
-        shutil.move(f"./for009_werr_{stage_no}_{sample_no}.txt", f"./doneFOR009/for009_werr_{stage_no}_{sample_no}.txt")
+        shutil.move(f"./for009_werr_{stage_no}_{sample_no}.txt", f"./for009outputs/for009_werr_{stage_no}_{sample_no}.txt")
     
     data = np.column_stack((zvals, eperps, elongs, e6ds, transs))
     return data
@@ -158,7 +158,7 @@ def singleStageNoErr(noerrfile, number_of_particles, stage_no):
         print("NOERR G4bl calculations completed successfully.")
         
         os.rename("./for009.dat", f"./for009_noerr_{stage_no}"+".txt")
-        shutil.move(f"./for009_noerr_{stage_no}"+".txt", f"./doneFOR009/for009_noerr_{stage_no}"+".txt")
+        shutil.move(f"./for009_noerr_{stage_no}"+".txt", f"./for009outputs/for009_noerr_{stage_no}"+".txt")
     
     datanoerr = np.column_stack((zvals_noerr,np.asarray(eperps_noerr).flatten(),np.asarray(elongs_noerr).flatten(),np.asarray(e6ds_noerr).flatten(), np.asarray(transs_noerr).flatten()))
     return datanoerr

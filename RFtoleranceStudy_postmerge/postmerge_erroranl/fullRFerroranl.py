@@ -10,7 +10,7 @@ import glob
 from natsort import natsorted
 import matplotlib.pyplot as plt
 from itertools import islice
-from varrfanlallstages import allStages
+from tolRFallstages import allStages
 from scipy.stats import norm
 
 parser = argparse.ArgumentParser()

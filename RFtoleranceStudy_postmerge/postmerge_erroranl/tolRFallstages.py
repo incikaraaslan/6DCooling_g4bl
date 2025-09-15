@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 from tqdm import trange
-from varrfanlsinglestage import singleStageNoErr, singleStage
+from tolRFsinglestage import singleStageNoErr, singleStage
 import re
 import glob
 from natsort import natsorted

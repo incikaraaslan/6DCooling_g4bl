@@ -75,7 +75,7 @@ def singleStageNoErr(noerrfile, number_of_particles, stage_no):
         print("NOERR G4bl and Ecalc9f calculations completed successfully.")
         
         os.rename("./for009.dat", f"./for009_noerr_{stage_no}"+".txt")
-        shutil.move(f"./for009_noerr_{stage_no}"+".txt", f"./doneFOR009/for009_noerr_{stage_no}"+".txt")
+        shutil.move(f"./for009_noerr_{stage_no}"+".txt", f"./for009outputs/for009_noerr_{stage_no}"+".txt")
     
     datanoerr = np.column_stack((zvals_noerr,np.asarray(eperps_noerr).flatten(),np.asarray(elongs_noerr).flatten(), np.asarray(transs_noerr).flatten()))
     return datanoerr
