@@ -41,7 +41,7 @@ The progress over Summer 2025 for this project is logged daily at: https://tinyu
 - [References](#references)
 
 ## 10 TeV Muon Collider and Tolerance Studies
-For the purposes of effectively constructing a 10 TeV center-of-mass Muon Collider, it is crucial to have a cooling section where the goal is to rapidly decrease muon beam emittance to reach the desired luminosity for the eventual $\mu^+$ and $\mu+-$ collision in the acceleration ring. 
+For the purposes of effectively constructing a 10 TeV center-of-mass Muon Collider, it is crucial to have a cooling section where the goal is to rapidly decrease muon beam emittance to reach the desired luminosity for the eventual $\mu^+$ and $\mu^-$ collision in the acceleration ring. 
 
 We can reduce the beam emittance without violating Liouville's theorem by applying non-conservative forces through collisions with electrons in the low-Z (LH) wedge absorber, a process known as ionization cooling. The International Muon Collider Collaboration (IMCC) has proposed the rectilinear channel to facilitate ionization cooling, which includes solenoids, RF cavities, wedge absorbers, and pipes. However, the specifications we optimize for in our simulations for the solenoids and RF cavities may not be built exactly as we intended. This is why we deliberately introduce deviations to the specs of components one by one to probe the emittance and transmission changes--which is called tolerance studies.
 
