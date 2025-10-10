@@ -65,7 +65,7 @@ def extract_region_beam(for009_path, extreg_path, output_path):
             if jsrg == region:
                 outfile.write(line)
 
-    print(f"✅ Extracted particles from region {region} into '{output_path}'.")"""
+    print(f" Extracted particles from region {region} into '{output_path}'.")"""
 
 def convertZ(input_file, output_file):
     event_id_counter = 1
